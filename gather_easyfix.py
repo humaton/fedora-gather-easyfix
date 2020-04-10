@@ -106,18 +106,13 @@ def gather_bugzilla_issues():
     for bz_project in bz_projects:
         bz_issues = bzclient.query(
             {
-                #"f1": "keywords",
-                #"o1": "allwords",
-                #"v1": "easyfix",
                 "query_format": "advanced",
                 "bug_status": ["NEW", "ASSIGNED"],
                 "classification": "Fedora",
-                "Product": "Fedora",
-                "Component": bz_project.name 
+                "product": "Fedora",
+                "component": bz_project.name 
             }
         )
-        import ipdb; ipdb.set_trace()
-        print(bz_issues)
         bz_issues += bz_issues
     # print(" {0} trivial bugs retrieved from BZ".format(len(bugbz)))
     return bz_issues
