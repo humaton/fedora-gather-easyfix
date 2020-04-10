@@ -105,6 +105,7 @@ def gather_bugzilla_issues():
     easyfix or whiteboard trivial.
     """
     bz_projects = gather_bz_projects()
+    full_bz_issues = []
     for bz_project in bz_projects:
         bz_issues = bzclient.query(
             {
@@ -115,9 +116,8 @@ def gather_bugzilla_issues():
                 "component": bz_project.name
             }
         )
-        bz_issues += bz_issues
-    # print(" {0} trivial bugs retrieved from BZ".format(len(bugbz)))
-    return bz_issues
+        full_bz_issues += bz_issues
+    return full_bz_issues
 
 
 def gather_projects():
