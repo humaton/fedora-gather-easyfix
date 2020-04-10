@@ -89,7 +89,7 @@ def gather_bz_projects():
     page = projects_file.read()
     projects = []
     for row in page.split("\n"):
-        regex = re.search("\* (bugzilla:)([^ ]*) ?", row)
+        regex = re.search("\* (bugzilla:)([^ ]*) ?$", row)
         if regex:
             project = Project()
             project.name = regex.group(2)
@@ -110,7 +110,7 @@ def gather_bugzilla_issues():
                 "bug_status": ["NEW", "ASSIGNED"],
                 "classification": "Fedora",
                 "product": "Fedora",
-                "component": bz_project.name 
+                "component": bz_project.name
             }
         )
         bz_issues += bz_issues
@@ -129,7 +129,7 @@ def gather_projects():
     page = projects_file.read()
     projects = []
     for row in page.split("\n"):
-        regex = re.search("\* (?!bugzilla)([^ ]*) ([^ ]*)( [^ ]*)?", row)
+        regex = re.search("\* (?!bugzilla)([^ ]*) ?$", row)
         if regex:
             project = Project()
             project.name = regex.group(1)
