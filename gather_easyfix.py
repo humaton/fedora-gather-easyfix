@@ -78,6 +78,7 @@ class Ticket(object):
         self.type = ""
         self.component = ""
         self.tag = ""
+        self.assingee = ""
 
 def gather_bz_projects():
     """ Retrieve all Bugzilla projects from cpe list.
@@ -172,7 +173,7 @@ def main():
 
     projects = gather_projects()
 
-    labels = ['groomed', 'assigned']
+    labels = ['groomed', 'in-progress']
     ticket_num = 0
     for project in projects:
         # print('Project: %s' % project.name)
@@ -200,6 +201,7 @@ def main():
                         ticketobj.url = ticket["html_url"]
                         ticketobj.status = ticket["state"]
                         ticketobj.tag = label
+                        ticketobj.status = ticket["assignee"]
                         tickets.append(ticketobj)
         elif full_project_name.startswith("pagure.io:"):
             for label in labels:
@@ -226,6 +228,7 @@ def main():
                         )
                         ticketobj.status = ticket["status"]
                         ticketobj.tag = label
+                        ticketobj.status = ticket["assignee"]
                         tickets.append(ticketobj)
         elif full_project_name.startswith("gitlab.com:"):
             for label in labels:
@@ -251,6 +254,7 @@ def main():
                         ticketobj.url = ticket["web_url"]
                         ticketobj.status = ticket["state"]
                         ticketobj.tag = label
+                        ticketobj.status = ticket["assignee_username"]
                         tickets.append(ticketobj)
         project.tickets = tickets
 

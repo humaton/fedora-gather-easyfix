@@ -108,7 +108,7 @@
                     </p>
                     <p>
                     If you are a project owner, see the <a href="https://fedoraproject.org/wiki/Easyfix">
-                     wiki</a> for more information.
+                    wiki</a> for more information.
                     </p>
                 </div>
                 <div id="tabs">
@@ -122,18 +122,38 @@
                         {% if project.tickets %}
                         <div class="main-page-section">
                             <h2><a href="{{ project.url }}" name="{{ project.name }}">{{ project.name }}</a></h2>
-                            <p>
-                            To get started contact <a
-                            href="mailto:{{ project.owner }}@fedoraproject.org">
-                                {{ project.owner }}</a>
-                            </p>
                             {% for ticket in project.tickets%}
-                            <p>
-                            <a href="{{ ticket.url }}"> #{{ ticket.id }}</a>
-                            {{ ticket.title|e }} <br />
-                            Status : {{ ticket.status }} - Type : {{ ticket.type }} -
-                            Component : {{ ticket.component }}
-                            </p>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Groomed</th>
+                                        <th>Assignee</th>
+                                        <th>In Progress</th>
+                                        <th>Assignee</th>
+                                    </tr>
+                                </thead>
+                            <tbody>
+                                <tr>
+                                    {% if ticket.tag == "groomed" %}
+                                    <td>
+                                        <a href="{{ ticket.url }}"> #{{ ticket.id }}</a>
+                                        {{ ticket.title|e }}
+                                    </td>
+                                    <td>
+                                        {{ ticket.assignee|e }}
+                                    </td>
+                                    {% else %}
+                                    <td>
+                                        <a href="{{ ticket.url }}"> #{{ ticket.id }}</a>
+                                        {{ ticket.title|e }}
+                                    </td>
+                                    <td>
+                                        {{ ticket.assignee|e }}
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                            </tbody>
+                            </table>
                             {% endfor %}
                         </div>
                         {% endif %}
