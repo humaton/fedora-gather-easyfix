@@ -1,5 +1,0 @@
-* pagure.io:releng
-* pagure.io:fedora-infrastructure
-* github:fedora-infra/bodhi
-* bugzilla:fedora-repos
-* bugzilla:fedora-release

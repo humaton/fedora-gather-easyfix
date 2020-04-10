@@ -32,6 +32,7 @@ import json
 import logging
 import os
 import re
+import toml
 
 try:
     from urllib2 import urlopen
@@ -60,6 +61,7 @@ class Project(object):
 
     def __init__(self):
         self.name = ""
+        self.service = ""
         self.url = ""
         self.site = ""
         self.owner = ""
@@ -80,31 +82,10 @@ class Ticket(object):
         self.tag = ""
         self.assingee = ""
 
-def gather_bz_projects():
-    """ Retrieve all Bugzilla projects from cpe list.
-    """
-    projects_path = "./projects.txt"
-    if not os.path.exists(projects_path):
-        print("No projects file is found")
-        return 1
-    projects_file = open(projects_path,'r')
-    page = projects_file.read()
-    projects = []
-    for row in page.split("\n"):
-        regex = re.search("\* (bugzilla:)([^ ]*) ?$", row)
-        if regex:
-            project = Project()
-            project.name = regex.group(2)
-            projects.append(project)
-    projects_file.close()
-    return projects
-
-
-def gather_bugzilla_issues():
+def gather_bugzilla_issues(bz_projects):
     """ From the Red Hat bugzilla, retrieve all new tickets with keyword
     easyfix or whiteboard trivial.
     """
-    bz_projects = gather_bz_projects()
     full_bz_issues = []
     for bz_project in bz_projects:
         bz_issues = bzclient.query(
@@ -120,23 +101,29 @@ def gather_bugzilla_issues():
     return full_bz_issues
 
 
-def gather_projects():
+def gather_projects(bz_service = False):
     """ Retrieve all the projects which have subscribed to this idea.
     """
-    projects_path = "./projects.txt"
+    projects_path = "projects.toml"
     if not os.path.exists(projects_path):
         print("No projects file is found")
         return 1
-    projects_file = open(projects_path,'r')
-    page = projects_file.read()
+    projects_list = toml.load(os.path.join(os.getcwd(), projects_path))
     projects = []
-    for row in page.split("\n"):
-        regex = re.search("\* (?!bugzilla)([^ ]*) ?$", row)
-        if regex:
+    if not bz_service:
+        for service in projects_list['projects']:
+            if service != 'bugzilla':
+                for repo in projects_list['projects'][service]:
+                    project = Project()
+                    project.name = repo
+                    project.service = service
+                    projects.append(project)
+    else:
+        for repo in projects_list['projects']['bugzilla']:
             project = Project()
-            project.name = regex.group(1)
+            project.name = repo
+            project.service = 'bugzilla'
             projects.append(project)
-    projects_file.close()
     return projects
 
 
@@ -178,11 +165,9 @@ def main():
     for project in projects:
         # print('Project: %s' % project.name)
         tickets = []
-        full_project_name = project.name
-        if full_project_name.startswith("github:"):
+        if project.service == 'github':
             for label in labels:
                 project.tag = label
-                project.name = full_project_name.split("github:")[1]
                 project.url = "https://github.com/%s/" % (project.name)
                 project.site = "github"
                 url = (
@@ -207,10 +192,9 @@ def main():
                         else:
                             ticketobj.assignee = None
                         tickets.append(ticketobj)
-        elif full_project_name.startswith("pagure.io:"):
+        elif project.service == "pagure":
             for label in labels:
                 project.tag = label
-                project.name = full_project_name.split("pagure.io:")[1]
                 project.url = "https://pagure.io/%s/" % (project.name)
                 project.site = "pagure.io"
                 url = (
@@ -237,11 +221,10 @@ def main():
                         else:
                             ticketobj.assignee = None
                         tickets.append(ticketobj)
-        elif full_project_name.startswith("gitlab.com:"):
+        elif project.service == "gitlab":
             for label in labels:
                 project.tag = label
                 # https://docs.gitlab.com/ee/api/issues.html#list-project-issues
-                project.name = full_project_name.split("gitlab.com:")[1]
                 project.url = "https://gitlab.com/%s/" % (project.name)
                 project.site = "gitlab.com"
                 url = (
@@ -267,8 +250,8 @@ def main():
                             ticketobj.assignee = None
                         tickets.append(ticketobj)
         project.tickets = tickets
-
-    bzbugs = gather_bugzilla_issues()
+    bz_projects = gather_projects(True)
+    bzbugs = gather_bugzilla_issues(bz_projects)
     bzbugs.sort(key=lambda x: x.id)
 
     try:
