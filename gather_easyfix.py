@@ -133,8 +133,6 @@ def gather_projects():
         if regex:
             project = Project()
             project.name = regex.group(1)
-            project.tag = regex.group(2)
-            project.owner = regex.group(3)
             projects.append(project)
     projects_file.close()
     return projects
@@ -173,75 +171,83 @@ def main():
 
     projects = gather_projects()
 
+    labels = ['groomed', 'assigned']
     ticket_num = 0
     for project in projects:
         # print('Project: %s' % project.name)
         tickets = []
-        if project.name.startswith("github:"):
-            project.name = project.name.split("github:")[1]
-            project.url = "https://github.com/%s/" % (project.name)
-            project.site = "github"
-            url = (
-                "https://api.github.com/repos/%s/issues"
-                "?labels=%s&state=open" % (project.name, project.tag)
-            )
-            stream = urlopen(url)
-            output = stream.read()
-            jsonobj = json.loads(output)
-            if jsonobj:
-                for ticket in jsonobj:
-                    ticket_num = ticket_num + 1
-                    ticketobj = Ticket()
-                    ticketobj.id = ticket["number"]
-                    ticketobj.title = ticket["title"]
-                    ticketobj.url = ticket["html_url"]
-                    ticketobj.status = ticket["state"]
-                    tickets.append(ticketobj)
-        elif project.name.startswith("pagure.io:"):
-            project.name = project.name.split("pagure.io:")[1]
-            project.url = "https://pagure.io/%s/" % (project.name)
-            project.site = "pagure.io"
-            url = (
-                "https://pagure.io/api/0/%s/issues"
-                "?status=Open&tags=%s" % (project.name, project.tag)
-            )
-            stream = urlopen(url)
-            output = stream.read()
-            jsonobj = json.loads(output)
-            if jsonobj:
-                for ticket in jsonobj["issues"]:
-                    ticket_num = ticket_num + 1
-                    ticketobj = Ticket()
-                    ticketobj.id = ticket["id"]
-                    ticketobj.title = ticket["title"]
-                    ticketobj.url = "https://pagure.io/%s/issue/%s" % (
-                        project.name,
-                        ticket["id"],
-                    )
-                    ticketobj.status = ticket["status"]
-                    tickets.append(ticketobj)
-        elif project.name.startswith("gitlab.com:"):
-            # https://docs.gitlab.com/ee/api/issues.html#list-project-issues
-            project.name = project.name.split("gitlab.com:")[1]
-            project.url = "https://gitlab.com/%s/" % (project.name)
-            project.site = "gitlab.com"
-            url = (
-                "https://gitlab.com/api/v4/projects/%s/issues"
-                "?state=opened&labels=%s"
-                % (urllib2.quote(project.name, safe=""), project.tag)
-            )
-            stream = urlopen(url)
-            output = stream.read()
-            jsonobj = json.loads(output)
-            if jsonobj:
-                for ticket in jsonobj:
-                    ticket_num = ticket_num + 1
-                    ticketobj = Ticket()
-                    ticketobj.id = ticket["id"]
-                    ticketobj.title = ticket["title"]
-                    ticketobj.url = ticket["web_url"]
-                    ticketobj.status = ticket["state"]
-                    tickets.append(ticketobj)
+        full_project_name = project.name
+        if full_project_name.startswith("github:"):
+            for label in labels:
+                project.tag = label
+                project.name = full_project_name.split("github:")[1]
+                project.url = "https://github.com/%s/" % (project.name)
+                project.site = "github"
+                url = (
+                    "https://api.github.com/repos/%s/issues"
+                    "?labels=%s&state=open" % (project.name, project.tag)
+                )
+                stream = urlopen(url)
+                output = stream.read()
+                jsonobj = json.loads(output)
+                if jsonobj:
+                    for ticket in jsonobj:
+                        ticket_num = ticket_num + 1
+                        ticketobj = Ticket()
+                        ticketobj.id = ticket["number"]
+                        ticketobj.title = ticket["title"]
+                        ticketobj.url = ticket["html_url"]
+                        ticketobj.status = ticket["state"]
+                        tickets.append(ticketobj)
+        elif full_project_name.startswith("pagure.io:"):
+            for label in labels:
+                project.tag = label
+                project.name = full_project_name.split("pagure.io:")[1]
+                project.url = "https://pagure.io/%s/" % (project.name)
+                project.site = "pagure.io"
+                url = (
+                    "https://pagure.io/api/0/%s/issues"
+                    "?status=Open&tags=%s" % (project.name, project.tag)
+                )
+                stream = urlopen(url)
+                output = stream.read()
+                jsonobj = json.loads(output)
+                if jsonobj:
+                    for ticket in jsonobj["issues"]:
+                        ticket_num = ticket_num + 1
+                        ticketobj = Ticket()
+                        ticketobj.id = ticket["id"]
+                        ticketobj.title = ticket["title"]
+                        ticketobj.url = "https://pagure.io/%s/issue/%s" % (
+                            project.name,
+                            ticket["id"],
+                        )
+                        ticketobj.status = ticket["status"]
+                        tickets.append(ticketobj)
+        elif full_project_name.startswith("gitlab.com:"):
+            for label in labels:
+                project.tag = label
+                # https://docs.gitlab.com/ee/api/issues.html#list-project-issues
+                project.name = full_project_name.split("gitlab.com:")[1]
+                project.url = "https://gitlab.com/%s/" % (project.name)
+                project.site = "gitlab.com"
+                url = (
+                    "https://gitlab.com/api/v4/projects/%s/issues"
+                    "?state=opened&labels=%s"
+                    % (urllib2.quote(project.name, safe=""), project.tag)
+                )
+                stream = urlopen(url)
+                output = stream.read()
+                jsonobj = json.loads(output)
+                if jsonobj:
+                    for ticket in jsonobj:
+                        ticket_num = ticket_num + 1
+                        ticketobj = Ticket()
+                        ticketobj.id = ticket["id"]
+                        ticketobj.title = ticket["title"]
+                        ticketobj.url = ticket["web_url"]
+                        ticketobj.status = ticket["state"]
+                        tickets.append(ticketobj)
         project.tickets = tickets
 
     bzbugs = gather_bugzilla_issues()
