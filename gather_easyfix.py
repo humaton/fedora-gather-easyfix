@@ -55,33 +55,6 @@ logger = logging.getLogger("bugzilla")
 RETRIES = 2
 
 
-class MediaWikiException(Exception):
-    """ MediaWikiException class.
-    Exception class generated when something has gone wrong while
-    querying the MediaWiki instance of the project.
-    """
-
-    pass
-
-
-class MediaWiki:
-    """ Mediawiki class.
-    Handles interaction with the Mediawiki.
-    """
-
-    def __init__(self, base_url):
-        """ Instanciate a Mediawiki client.
-        :arg base_url: site url of the mediawiki to query.
-        """
-        self.site = mwclient.Site(base_url)
-
-    def get_pagesource(self, title):
-        """ Retrieve the content of a given page from Mediawiki.
-        :arg title, the title of the page to return
-        """
-        return self.site.pages[title].text()
-
-
 class Project(object):
     """ Simple object representation of a project. """
 
@@ -105,49 +78,70 @@ class Ticket(object):
         self.type = ""
         self.component = ""
 
+def gather_bz_projects():
+    """ Retrieve all Bugzilla projects from cpe list.
+    """
+    projects_path = "./projects.txt"
+    if not os.path.exists(projects_path):
+        print("No projects file is found")
+        return 1
+    projects_file = open(projects_path,'r')
+    page = projects_file.read()
+    projects = []
+    for row in page.split("\n"):
+        regex = re.search("\* (bugzilla:)([^ ]*) ?", row)
+        if regex:
+            project = Project()
+            project.name = regex.group(2)
+            projects.append(project)
+    projects_file.close()
+    return projects
 
-def gather_bugzilla_easyfix():
+
+def gather_bugzilla_issues():
     """ From the Red Hat bugzilla, retrieve all new tickets with keyword
     easyfix or whiteboard trivial.
     """
-    bugbz_easyfix = bzclient.query(
-        {
-            "f1": "keywords",
-            "o1": "allwords",
-            "v1": "easyfix",
-            "query_format": "advanced",
-            "bug_status": ["NEW"],
-            "classification": "Fedora",
-        }
-    )
-    # print(" {0} easyfix bugs retrieved from BZ".format(len(bugbz_easyfix)))
-    bugbz_trivial = bzclient.query(
-        {
-            "status_whiteboard": "trivial",
-            "status_whiteboard_type": "anywords",
-            "query_format": "advanced",
-            "bug_status": ["NEW"],
-            "classification": "Fedora",
-        }
-    )
+    bz_projects = gather_bz_projects()
+    for bz_project in bz_projects:
+        bz_issues = bzclient.query(
+            {
+                #"f1": "keywords",
+                #"o1": "allwords",
+                #"v1": "easyfix",
+                "query_format": "advanced",
+                "bug_status": ["NEW", "ASSIGNED"],
+                "classification": "Fedora",
+                "Product": "Fedora",
+                "Component": bz_project.name 
+            }
+        )
+        import ipdb; ipdb.set_trace()
+        print(bz_issues)
+        bz_issues += bz_issues
     # print(" {0} trivial bugs retrieved from BZ".format(len(bugbz)))
-    return bugbz_easyfix + bugbz_trivial
+    return bz_issues
 
 
-def gather_project():
+def gather_projects():
     """ Retrieve all the projects which have subscribed to this idea.
     """
-    wiki = MediaWiki("fedoraproject.org")
-    page = wiki.get_pagesource("Easyfix")
+    projects_path = "./projects.txt"
+    if not os.path.exists(projects_path):
+        print("No projects file is found")
+        return 1
+    projects_file = open(projects_path,'r')
+    page = projects_file.read()
     projects = []
     for row in page.split("\n"):
-        regex = re.search(" \* ([^ ]*) ([^ ]*)( [^ ]*)?", row)
+        regex = re.search("\* (?!bugzilla)([^ ]*) ([^ ]*)( [^ ]*)?", row)
         if regex:
             project = Project()
             project.name = regex.group(1)
             project.tag = regex.group(2)
             project.owner = regex.group(3)
             projects.append(project)
+    projects_file.close()
     return projects
 
 
@@ -182,11 +176,8 @@ def main():
         print("No template found")
         return 1
 
-    try:
-        projects = gather_project()
-    except MediaWikiException as ex:
-        print(ex)
-        return
+    projects = gather_projects()
+
     ticket_num = 0
     for project in projects:
         # print('Project: %s' % project.name)
@@ -258,7 +249,7 @@ def main():
                     tickets.append(ticketobj)
         project.tickets = tickets
 
-    bzbugs = gather_bugzilla_easyfix()
+    bzbugs = gather_bugzilla_issues()
     bzbugs.sort(key=lambda x: x.id)
 
     try:

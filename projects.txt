@@ -1,0 +1,5 @@
+* pagure.io:releng meeting mohanboddu
+* pagure.io:fedora-infrastructure easyfix kevin
+* github:fedora-infra/bodhi EasyFix bowlofeggs
+* bugzilla:fedora-repos
+* bugzilla:fedora-release
