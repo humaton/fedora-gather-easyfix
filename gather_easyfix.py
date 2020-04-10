@@ -201,7 +201,11 @@ def main():
                         ticketobj.url = ticket["html_url"]
                         ticketobj.status = ticket["state"]
                         ticketobj.tag = label
-                        ticketobj.status = ticket["assignee"]
+                        if ticket["assignee"]:
+                            # GitHub api doesn't give full name of the user
+                            ticketobj.assignee = ticket["assignee"]["login"]
+                        else:
+                            ticketobj.assignee = None
                         tickets.append(ticketobj)
         elif full_project_name.startswith("pagure.io:"):
             for label in labels:
@@ -228,7 +232,10 @@ def main():
                         )
                         ticketobj.status = ticket["status"]
                         ticketobj.tag = label
-                        ticketobj.status = ticket["assignee"]
+                        if ticket["assignee"]:
+                            ticketobj.assignee = ticket["assignee"]["fullname"]
+                        else:
+                            ticketobj.assignee = None
                         tickets.append(ticketobj)
         elif full_project_name.startswith("gitlab.com:"):
             for label in labels:
@@ -254,7 +261,10 @@ def main():
                         ticketobj.url = ticket["web_url"]
                         ticketobj.status = ticket["state"]
                         ticketobj.tag = label
-                        ticketobj.status = ticket["assignee_username"]
+                        if ticket["assignee"]:
+                            ticketobj.assignee = ticket["assignee"]["name"]
+                        else:
+                            ticketobj.assignee = None
                         tickets.append(ticketobj)
         project.tickets = tickets
 

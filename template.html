@@ -122,7 +122,6 @@
                         {% if project.tickets %}
                         <div class="main-page-section">
                             <h2><a href="{{ project.url }}" name="{{ project.name }}">{{ project.name }}</a></h2>
-                            {% for ticket in project.tickets%}
                             <table>
                                 <thead>
                                     <tr>
@@ -132,6 +131,7 @@
                                         <th>Assignee</th>
                                     </tr>
                                 </thead>
+                            {% for ticket in project.tickets%}
                             <tbody>
                                 <tr>
                                     {% if ticket.tag == "groomed" %}
