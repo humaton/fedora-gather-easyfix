@@ -82,6 +82,7 @@ class Ticket(object):
         self.tag = ""
         self.assingee = ""
 
+
 def gather_bugzilla_issues(bz_projects):
     """ From the Red Hat bugzilla, retrieve all new tickets with keyword
     easyfix or whiteboard trivial.
@@ -101,8 +102,8 @@ def gather_bugzilla_issues(bz_projects):
     return full_bz_issues
 
 
-def gather_projects(bz_service = False):
-    """ Retrieve all the projects which have subscribed to this idea.
+def gather_projects(bz_service=False):
+    """ Retrieve all the projects which have subscribed to this idea.z
     """
     projects_path = "projects.toml"
     if not os.path.exists(projects_path):
@@ -110,19 +111,11 @@ def gather_projects(bz_service = False):
         return 1
     projects_list = toml.load(os.path.join(os.getcwd(), projects_path))
     projects = []
-    if not bz_service:
-        for service in projects_list['projects']:
-            if service != 'bugzilla':
-                for repo in projects_list['projects'][service]:
-                    project = Project()
-                    project.name = repo
-                    project.service = service
-                    projects.append(project)
-    else:
-        for repo in projects_list['projects']['bugzilla']:
+    for service in projects_list['projects']:
+        for repo in projects_list['projects'][service]:
             project = Project()
             project.name = repo
-            project.service = 'bugzilla'
+            project.service = service
             projects.append(project)
     return projects
 
@@ -249,28 +242,48 @@ def main():
                         else:
                             ticketobj.assignee = None
                         tickets.append(ticketobj)
-        project.tickets = tickets
-    bz_projects = gather_projects(True)
-    bzbugs = gather_bugzilla_issues(bz_projects)
-    bzbugs.sort(key=lambda x: x.id)
-
+        elif project.service == "bugzilla":
+            project.tag = "bugzillaTag"
+                # https://docs.gitlab.com/ee/api/issues.html#list-project-issues
+            project.url = "https://bugzilla.redhat.com/%s/" % (project.name)
+            project.site = "bugzilla.redhat.com"
+            bz_list = bzclient.query(
+            {
+                "query_format": "advanced",
+                "bug_status": ["NEW", "ASSIGNED"],
+                "classification": "Fedora",
+                "product": "Fedora",
+                "component": project.name
+            })
+            for ticket in bz_list:
+                ticket_num=ticket_num + 1
+                ticketobj=Ticket()
+                ticketobj.id=ticket.bug_id
+                ticketobj.title=ticket.short_desc
+                ticketobj.url="https://bugzilla.redhat.com/{{ticket.bug_id}}"
+                ticketobj.status=ticket.status
+                if ticket.assigned_to:
+                    ticketobj.assignee=ticket.assigned_to
+                else:
+                    ticketobj.assignee=None
+                tickets.append(ticketobj)
+        project.tickets=tickets
+    
     try:
         # Read in template
-        stream = open(template, "r")
-        tplfile = stream.read()
+        stream=open(template, "r")
+        tplfile=stream.read()
         stream.close()
         # Fill the template
-        mytemplate = Template(tplfile)
-        html = mytemplate.render(
+        mytemplate=Template(tplfile)
+        html=mytemplate.render(
             projects=projects,
-            bzbugs=bzbugs,
             ticket_num=ticket_num,
-            bzbugs_num=len(bzbugs),
             date=datetime.datetime.now().strftime("%a %b %d %Y %H:%M"),
             **extra_kwargs
         )
         # Write down the page
-        stream = open("index.html", "w")
+        stream=open("index.html", "w")
         stream.write(html)
         stream.close()
     except IOError as err:
