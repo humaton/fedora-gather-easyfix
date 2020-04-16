@@ -14,14 +14,11 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/patternfly/3.24.0/js/patternfly.min.js"></script>
           
   <div class="fluid-container">
-      <!-- start sidebar -->
     <div>
 
         <h1>CPE Dashboard</h1>
         
     </div>
-    <!-- /start sidebar -->
-    
         <div class="clear"></div>
         <div class="row">
             <div class="col-xs-6">
@@ -48,7 +45,7 @@
                             {{ ticket.title|e }}
                         </td>
                         <td>
-                            <a href="{{ ticket.project_url|e }}">go to project</a>
+                            <a href="{{ ticket.project_url|e }}">({{ticket.project_site}})/{{ ticket.project|e }}</a>
                         </td>
                         <td>
                             {{ ticket.assignee|e }}
@@ -88,7 +85,7 @@
                             {{ ticket.title|e }}
                         </td>
                         <td>
-                            <a href="{{ ticket.project_url|e }}">go to project</a>
+                            <a href="{{ ticket.project_url|e }}">({{ticket.project_site}})/{{ ticket.project|e }}</a>
                         </td>
                         <td>
                             {{ ticket.assignee|e }}
@@ -128,7 +125,7 @@
                             {{ ticket.title|e }}
                         </td>
                         <td>
-                            <a href="{{ ticket.project_url|e }}">go to project</a>
+                            <a href="{{ ticket.project_url|e }}">({{ticket.project_site}})/{{ ticket.project|e }}</a>
                         </td>
                         <td>
                             {{ ticket.assignee|e }}

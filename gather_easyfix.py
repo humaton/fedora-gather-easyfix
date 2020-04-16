@@ -83,6 +83,8 @@ class Ticket(object):
         self.assingee = ""
         self.requester = ""
         self.project_url = ""
+        self.project = ""
+        self.project_site = ""
 
 
 def gather_bugzilla_issues(bz_projects):
@@ -184,6 +186,8 @@ def main():
                         ticketobj.tag = label
                         ticketobj.requester = ticket["user"]["login"]
                         ticketobj.project_url = project.url
+                        ticketobj.project = project.name
+                        ticketobj.project_site = project.site
                         if ticket["assignee"]:
                             # GitHub api doesn't give full name of the user
                             ticketobj.assignee = ticket["assignee"]["login"]
@@ -217,6 +221,8 @@ def main():
                         ticketobj.tag = label
                         ticketobj.requester = ticket["user"]["name"]
                         ticketobj.project_url = project.url
+                        ticketobj.project = project.name
+                        ticketobj.project_site = project.site
                         if ticket["assignee"]:
                             ticketobj.assignee = ticket["assignee"]["fullname"]
                         else:
@@ -248,6 +254,8 @@ def main():
                         ticketobj.tag = label
                         ticketobj.requester = ""
                         ticketobj.project_url = project.url
+                        ticketobj.project = project.name
+                        ticketobj.project_site = project.site
                         if ticket["assignee"]:
                             ticketobj.assignee = ticket["assignee"]["name"]
                         else:
@@ -278,6 +286,8 @@ def main():
                 ticketobj.tag =  "in-progress" if ticket.bug_status == "ASSIGNED" else "" 
                 ticketobj.requester = ticket.creator
                 ticketobj.project_url = project.url
+                ticketobj.project = project.name
+                ticketobj.project_site = project.site
                 if ticket.assigned_to:
                     ticketobj.assignee = ticket.assigned_to
                 else:
