@@ -13,75 +13,141 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/patternfly/3.24.0/js/patternfly.min.js"></script>
           
-  <div class="container">
+  <div class="fluid-container">
       <!-- start sidebar -->
     <div>
 
-        <h4>Project list </h4>
-        <ul class="nav nav-tabs">
-            {% for project in projects %}
-            <li>
-                <a href="#{{ project.name }}">{{ project.name }}</a>
-                
-            </li>
-            {% endfor %}
-        </ul>
-
+        <h1>CPE Dashboard</h1>
+        
     </div>
     <!-- /start sidebar -->
     
-        <div id="tabs">
-            <div class="clear"></div>
-            <div id="tabs-1">
-                {% for project in projects %}
-                {% if project.tickets %}
-                <div class="main-page-section">
-                    <h2><a href="{{ project.url }}" name="{{ project.name }}">{{ project.name }}</a></h2>
+        <div class="clear"></div>
+        <div class="row">
+            <div class="col-xs-6">
+                <p><h4>All tickets</h4></p>
                     <table class="table table-striped table-bordered table-centered">
                         <thead>
                             <tr>
-                                <th>Groomed</th>
+                                <th>Ticket link</th>
+                                <th>Ticket info</th>
+                                <th>Project</th>
                                 <th>Assignee</th>
-                                <th>In Progress</th>
-                                <th>Assignee</th>
+                                <th>Requester</th>
+                                <th>Tag</th>
+                                
                             </tr>
                         </thead>
                     <tbody>
-                        {% for ticket in project.tickets%}
-                        <tr>
-                            {% if ticket.tag == "groomed" %}
-                            <td>
-                                <a href="{{ ticket.url }}"> #{{ ticket.id }}</a>
-                                {{ ticket.title|e }}
-                            </td>
-                            <td>
-                                {{ ticket.assignee|e }}
-                            </td>
-                            <td></td>
-                            <td></td>
-                            {% else %}
-                            <td></td>
-                            <td></td>
-                            <td>
-                                <a href="{{ ticket.url }}"> #{{ ticket.id }}</a>
-                                {{ ticket.title|e }}
-                            </td>
-                            <td>
-                                {{ ticket.assignee|e }}
-                            </td>
-                            {% endif %}
-                        </tr>
-                        {% endfor %}
+                {% for ticket in all_tickets %}
+                    <tr>
+                        <td>
+                            <a href="{{ ticket.url|e }}"> {{ ticket.id }}</a>
+                        </td>
+                        <td>
+                            {{ ticket.title|e }}
+                        </td>
+                        <td>
+                            <a href="{{ ticket.project_url|e }}">go to project</a>
+                        </td>
+                        <td>
+                            {{ ticket.assignee|e }}
+                        </td>
+                        <td>
+                            {{ ticket.requester|e }}
+                        </td>
+                        <td>
+                            {{ ticket.tag|e }}
+                        </td>
+                    </tr>
+                {% endfor %}
+                    </tbody>
+                    </table>
+            </div>
+            <div class="col-xs-6">
+                    <p><h4>In-progress tickets</h4></p>
+                    <table class="table table-striped table-bordered table-centered">
+                        <thead>
+                            <tr>
+                                <th>Ticket link</th>
+                                <th>Ticket info</th>
+                                <th>Project</th>
+                                <th>Assignee</th>
+                                <th>Requester</th>
+                                <th>Tag</th>
+                                
+                            </tr>
+                        </thead>
+                    <tbody>
+                {% for ticket in tickets_in_progress %}
+                    <tr>
+                        <td>
+                            <a href="{{ ticket.url|e }}"> {{ ticket.id }}</a>
+                        </td>
+                        <td>
+                            {{ ticket.title|e }}
+                        </td>
+                        <td>
+                            <a href="{{ ticket.project_url|e }}">go to project</a>
+                        </td>
+                        <td>
+                            {{ ticket.assignee|e }}
+                        </td>
+                        <td>
+                            {{ ticket.requester|e }}
+                        </td>
+                        <td>
+                            {{ ticket.tag|e }}
+                        </td>
+                    </tr>
+                {% endfor %}
                     </tbody>
                     </table>
                 </div>
-                {% endif %}
+                <div class="col-xs-6">
+                    <p><h4>Groomed tickets</h4></p>
+                    <table class="table table-striped table-bordered table-centered">
+                        <thead>
+                            <tr>
+                                <th>Ticket link</th>
+                                <th>Ticket info</th>
+                                <th>Project</th>
+                                <th>Assignee</th>
+                                <th>Requester</th>
+                                <th>Tag</th>
+                                
+                            </tr>
+                        </thead>
+                    <tbody>
+                {% for ticket in tickets_groomed %}
+                    <tr>
+                        <td>
+                            <a href="{{ ticket.url|e }}"> {{ ticket.id }}</a>
+                        </td>
+                        <td>
+                            {{ ticket.title|e }}
+                        </td>
+                        <td>
+                            <a href="{{ ticket.project_url|e }}">go to project</a>
+                        </td>
+                        <td>
+                            {{ ticket.assignee|e }}
+                        </td>
+                        <td>
+                            {{ ticket.requester|e }}
+                        </td>
+                        <td>
+                            {{ ticket.tag|e }}
+                        </td>
+                    </tr>
                 {% endfor %}
-                <p> Total: {{ticket_num}} tickets found </p>
-            </div>
+                    </tbody>
+                    </table>
+                </div>
+                
         </div>
-       <div class="clear"></div>
+                <p> Total: {{ticket_num}} tickets found </p>
     <p>Last update: {{date}}</p>
-    </div>
+</div>
 </body>
 </html>
