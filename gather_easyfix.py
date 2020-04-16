@@ -81,6 +81,8 @@ class Ticket(object):
         self.component = ""
         self.tag = ""
         self.assingee = ""
+        self.requester = ""
+        self.project_url = ""
 
 
 def gather_bugzilla_issues(bz_projects):
@@ -153,8 +155,9 @@ def main():
 
     projects = gather_projects()
 
-    labels = ['groomed', 'in-progress']
+    labels = ['groomed', 'in-progress', '']
     ticket_num = 0
+    all_tickets = []
     for project in projects:
         # print('Project: %s' % project.name)
         tickets = []
@@ -165,7 +168,7 @@ def main():
                 project.site = "github"
                 url = (
                     "https://api.github.com/repos/%s/issues"
-                    "?labels=%s&state=open" % (project.name, project.tag)
+                    "?labels=%s&state=open" % (project.name, label)
                 )
                 stream = urlopen(url)
                 output = stream.read()
@@ -179,12 +182,15 @@ def main():
                         ticketobj.url = ticket["html_url"]
                         ticketobj.status = ticket["state"]
                         ticketobj.tag = label
+                        ticketobj.requester = ticket["user"]["login"]
+                        ticketobj.project_url = project.url
                         if ticket["assignee"]:
                             # GitHub api doesn't give full name of the user
                             ticketobj.assignee = ticket["assignee"]["login"]
                         else:
                             ticketobj.assignee = None
                         tickets.append(ticketobj)
+                        all_tickets.append(ticketobj)
         elif project.service == "pagure":
             for label in labels:
                 project.tag = label
@@ -192,7 +198,7 @@ def main():
                 project.site = "pagure.io"
                 url = (
                     "https://pagure.io/api/0/%s/issues"
-                    "?status=Open&tags=%s" % (project.name, project.tag)
+                    "?status=Open&tags=%s" % (project.name, label)
                 )
                 stream = urlopen(url)
                 output = stream.read()
@@ -209,11 +215,14 @@ def main():
                         )
                         ticketobj.status = ticket["status"]
                         ticketobj.tag = label
+                        ticketobj.requester = ticket["user"]["name"]
+                        ticketobj.project_url = project.url
                         if ticket["assignee"]:
                             ticketobj.assignee = ticket["assignee"]["fullname"]
                         else:
                             ticketobj.assignee = None
                         tickets.append(ticketobj)
+                        all_tickets.append(ticketobj)
         elif project.service == "gitlab":
             for label in labels:
                 project.tag = label
@@ -223,7 +232,7 @@ def main():
                 url = (
                     "https://gitlab.com/api/v4/projects/%s/issues"
                     "?state=opened&labels=%s"
-                    % (urllib2.quote(project.name, safe=""), project.tag)
+                    % (urllib2.quote(project.name, safe=""), label)
                 )
                 stream = urlopen(url)
                 output = stream.read()
@@ -237,53 +246,75 @@ def main():
                         ticketobj.url = ticket["web_url"]
                         ticketobj.status = ticket["state"]
                         ticketobj.tag = label
+                        ticketobj.requester = ""
+                        ticketobj.project_url = project.url
                         if ticket["assignee"]:
                             ticketobj.assignee = ticket["assignee"]["name"]
                         else:
                             ticketobj.assignee = None
                         tickets.append(ticketobj)
+                        all_tickets.append(ticketobj)
         elif project.service == "bugzilla":
             project.tag = "bugzillaTag"
-                # https://docs.gitlab.com/ee/api/issues.html#list-project-issues
-            project.url = "https://bugzilla.redhat.com/%s/" % (project.name)
+            # https://docs.gitlab.com/ee/api/issues.html#list-project-issues
+            project.url = "https://bugzilla.redhat.com/buglist.cgi?bug_status=NEW&bug_status=ASSIGNED&component=%s&product=Fedora" % (project.name)
             project.site = "bugzilla.redhat.com"
             bz_list = bzclient.query(
-            {
-                "query_format": "advanced",
-                "bug_status": ["NEW", "ASSIGNED"],
-                "classification": "Fedora",
-                "product": "Fedora",
-                "component": project.name
-            })
+                {
+                    "query_format": "advanced",
+                    "bug_status": ["NEW", "ASSIGNED"],
+                    "classification": "Fedora",
+                    "product": "Fedora",
+                    "component": project.name
+                })
             for ticket in bz_list:
-                ticket_num=ticket_num + 1
-                ticketobj=Ticket()
-                ticketobj.id=ticket.bug_id
-                ticketobj.title=ticket.short_desc
-                ticketobj.url="https://bugzilla.redhat.com/{{ticket.bug_id}}"
-                ticketobj.status=ticket.status
+                ticket_num = ticket_num + 1
+                ticketobj = Ticket()
+                ticketobj.id = ticket.bug_id
+                ticketobj.title = ticket.short_desc
+                ticketobj.url = "https://bugzilla.redhat.com/%s" % (
+                    ticket.bug_id)
+                ticketobj.status = ticket.status
+                ticketobj.tag =  "in-progress" if ticket.bug_status == "ASSIGNED" else "" 
+                ticketobj.requester = ticket.creator
+                ticketobj.project_url = project.url
                 if ticket.assigned_to:
-                    ticketobj.assignee=ticket.assigned_to
+                    ticketobj.assignee = ticket.assigned_to
                 else:
-                    ticketobj.assignee=None
+                    ticketobj.assignee = None
                 tickets.append(ticketobj)
-        project.tickets=tickets
+                all_tickets.append(ticketobj)
+        project.tickets = tickets
     
+    tickets_groomed = []
+    tickets_in_progress = []
+    tickets_untaged = []
+    for ticket in all_tickets:
+        if ticket.tag == "in-progress":
+            tickets_in_progress.append(ticket)
+        elif ticket.tag == "groomed":
+            tickets_groomed.append(ticket)
+        else:
+            tickets_untaged.append(ticket)
     try:
         # Read in template
-        stream=open(template, "r")
-        tplfile=stream.read()
+        stream = open(template, "r")
+        tplfile = stream.read()
         stream.close()
         # Fill the template
-        mytemplate=Template(tplfile)
-        html=mytemplate.render(
+        mytemplate = Template(tplfile)
+        html = mytemplate.render(
             projects=projects,
+            all_tickets=all_tickets,
             ticket_num=ticket_num,
+            tickets_groomed=tickets_groomed,
+            tickets_in_progress=tickets_in_progress,
+            tickets_untaged=tickets_untaged,
             date=datetime.datetime.now().strftime("%a %b %d %Y %H:%M"),
             **extra_kwargs
         )
         # Write down the page
-        stream=open("index.html", "w")
+        stream = open("index.html", "w")
         stream.write(html)
         stream.close()
     except IOError as err:
